@@ -67,6 +67,13 @@ async function run() {
             const result = await propertiesCollection.insertOne(property);
             res.send(result);
         })
+        
+        app.get('/properties/:email', async(req, res) => {
+            const email = req.params.email;
+            const query = {agentEmail : email};
+            const properties = await propertiesCollection.find(query).toArray();
+            res.send(properties);
+        })
 
 
 
