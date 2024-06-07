@@ -34,6 +34,7 @@ async function run() {
         // Send a ping to confirm a successful connection
         
         const userCollection = client.db("nextHomeDB").collection("users");
+        const propertiesCollection = client.db("nextHomeDB").collection("properties");
 
 
         // users related api
@@ -49,7 +50,6 @@ async function run() {
             res.send(user);
         })
 
-        
         app.post('/users', async (req, res) => {
             const user = req.body;
             const query = { email: user.email }
@@ -60,6 +60,13 @@ async function run() {
             const result = await userCollection.insertOne(user);
             res.send(result);
         });
+
+        // Properties related api
+        app.post('/properties', async(req, res) => {
+            const property = req.body;
+            const result = await propertiesCollection.insertOne(property);
+            res.send(result);
+        })
 
 
 
