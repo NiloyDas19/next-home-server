@@ -32,7 +32,7 @@ async function run() {
         // Connect the client to the server	(optional starting in v4.7)
         await client.connect();
         // Send a ping to confirm a successful connection
-        
+
         const userCollection = client.db("nextHomeDB").collection("users");
         const propertiesCollection = client.db("nextHomeDB").collection("properties");
 
@@ -45,8 +45,8 @@ async function run() {
 
         app.get('/users/:email', async (req, res) => {
             const email = req.params.email;
-            const query = {email : email};
-            const user  = await userCollection.findOne(query);
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
             res.send(user);
         })
 
@@ -61,30 +61,59 @@ async function run() {
             res.send(result);
         });
 
-        
+
         // Properties related api
-        app.post('/properties', async(req, res) => {
+        app.post('/properties', async (req, res) => {
             const property = req.body;
             const result = await propertiesCollection.insertOne(property);
             res.send(result);
         })
-        
-        app.get('/properties/:email', async(req, res) => {
+
+        app.get('/properties', async (req, res) => {
+            const properties = await propertiesCollection.find().toArray();
+            res.send(properties);
+        })
+
+        app.get('/properties/:email', async (req, res) => {
             const email = req.params.email;
-            const query = {agentEmail : email};
+            const query = { agentEmail: email };
             const properties = await propertiesCollection.find(query).toArray();
             res.send(properties);
         })
 
-        app.delete('/properties/:id', async(req, res) => {
+        app.get('/getProperties/:id', async (req, res) => {
             const id = req.params.id;
-            const query = {_id : new ObjectId(id)};
+            console.log(id);
+            const query = { _id: new ObjectId(id) };
+            // console.log(query);
+            const result = await propertiesCollection.findOne(query);
+            console.log(result);
+            res.send(result);
+        })
+
+        app.delete('/properties/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
             const result = await propertiesCollection.deleteOne(query);
             res.send(result);
         })
 
-
-
+        app.put('/properties/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const property = req.body;
+            const updatedProperties = {
+                $set: {
+                    propertyTitle : property.propertyTitle,
+                    propertyLocation : property.propertyLocation,
+                    propertyImageUrl: property.propertyImageUrl,
+                    minPrice : property.minPrice,
+                    maxPrice : property.maxPrice
+                }
+            }
+            const result = await propertiesCollection.updateOne(query, updatedProperties);
+            res.send(result);
+        })
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
