@@ -36,6 +36,8 @@ async function run() {
         const userCollection = client.db("nextHomeDB").collection("users");
         const propertiesCollection = client.db("nextHomeDB").collection("properties");
         const advertiserCollection = client.db("nextHomeDB").collection("advertise");
+        const wishlistCollection = client.db("nextHomeDB").collection("wishList");
+        const reviewerCollection = client.db("nextHomeDB").collection("reviews");
 
 
         // users related api
@@ -183,6 +185,40 @@ async function run() {
             res.send(result);
         })
 
+
+        // Wishlist
+        app.post('/wishlist', async (req, res) => {
+            const wishlist = req.body;
+            const result = await wishlistCollection.insertOne(wishlist);
+            res.send(result);
+        })
+
+
+        // Review 
+        app.post('/reviews', async (req, res) => {
+            const review = req.body;
+            const result = await reviewerCollection.insertOne(review);
+            res.send(result);
+        })
+
+        app.get('/reviews/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { propertyId: id };
+            const reviews = await reviewerCollection.find(query).toArray();
+            res.send(reviews);
+        })
+
+        app.get('/reviews', async (req, res) => {
+            const reviews = await reviewerCollection.find().toArray();
+            res.send(reviews);
+        })
+
+        app.delete('/deleteReviews/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await reviewerCollection.deleteOne(query);
+            res.send(result);
+        })
 
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
