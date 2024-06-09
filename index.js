@@ -61,7 +61,7 @@ async function run() {
             res.send(result);
         });
 
-        app.put('/userRole/:id',async (req, res) => {
+        app.put('/userRole/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const user = req.body;
@@ -99,6 +99,22 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/verifiedProperties', async (req, res) => {
+            const properties = await propertiesCollection.find({ verificationStatus: 'verified' }).toArray();
+            // console.log(properties);
+            const result = [];
+            for (let i = 0; i < properties.length; i++) {
+                const query = { email: properties[i].agentEmail };
+                const user = await userCollection.findOne(query);
+                // console.log(user);
+                if(user && user?.role === 'agent'){
+                    result.push(properties[i]);
+                }
+            }
+            // console.log(result);    
+            res.send(result);
+        })
+
         app.delete('/properties/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -112,24 +128,24 @@ async function run() {
             const property = req.body;
             const updatedProperties = {
                 $set: {
-                    propertyTitle : property.propertyTitle,
-                    propertyLocation : property.propertyLocation,
+                    propertyTitle: property.propertyTitle,
+                    propertyLocation: property.propertyLocation,
                     propertyImageUrl: property.propertyImageUrl,
-                    minPrice : property.minPrice,
-                    maxPrice : property.maxPrice
+                    minPrice: property.minPrice,
+                    maxPrice: property.maxPrice
                 }
             }
             const result = await propertiesCollection.updateOne(query, updatedProperties);
             res.send(result);
         })
 
-        app.put('/verifiedProperties/:id',async (req, res) => {
+        app.put('/verifiedProperties/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const property = req.body;
-            const updatedProperties ={
+            const updatedProperties = {
                 $set: {
-                    verificationStatus : property.verificationStatus,
+                    verificationStatus: property.verificationStatus,
                 }
             }
             const result = await propertiesCollection.updateOne(query, updatedProperties);
