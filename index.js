@@ -116,6 +116,22 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/advertisedProperties', async(req, res) => {
+            const properties = await propertiesCollection.find({ verificationStatus: 'verified' }).toArray();
+            // console.log(properties);
+            const result = [];
+            for (let i = 0; i < properties.length; i++) {
+                const query = { email: properties[i].agentEmail };
+                const user = await userCollection.findOne(query);
+                // console.log(user);
+                if (user && user?.role === 'agent' && properties[i]?.isAdvertised === true) {
+                    result.push(properties[i]);
+                }
+            }
+            // console.log(result);    
+            res.send(result);
+        })
+
         app.delete('/properties/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
@@ -133,7 +149,7 @@ async function run() {
                     propertyLocation: property.propertyLocation,
                     propertyImageUrl: property.propertyImageUrl,
                     minPrice: property.minPrice,
-                    maxPrice: property.maxPrice
+                    maxPrice: property.maxPrice,
                 }
             }
             const result = await propertiesCollection.updateOne(query, updatedProperties);
