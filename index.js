@@ -115,6 +115,20 @@ async function run() {
             res.send(result);
         })
 
+        app.put('/verifiedProperties/:id',async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const property = req.body;
+            const updatedProperties ={
+                $set: {
+                    verificationStatus : property.verificationStatus,
+                }
+            }
+            const result = await propertiesCollection.updateOne(query, updatedProperties);
+            res.send(result);
+        })
+
+
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
