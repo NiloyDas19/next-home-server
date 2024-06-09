@@ -35,6 +35,7 @@ async function run() {
 
         const userCollection = client.db("nextHomeDB").collection("users");
         const propertiesCollection = client.db("nextHomeDB").collection("properties");
+        const advertiserCollection = client.db("nextHomeDB").collection("advertise");
 
 
         // users related api
@@ -107,7 +108,7 @@ async function run() {
                 const query = { email: properties[i].agentEmail };
                 const user = await userCollection.findOne(query);
                 // console.log(user);
-                if(user && user?.role === 'agent'){
+                if (user && user?.role === 'agent') {
                     result.push(properties[i]);
                 }
             }
@@ -149,6 +150,20 @@ async function run() {
                 }
             }
             const result = await propertiesCollection.updateOne(query, updatedProperties);
+            res.send(result);
+        })
+
+        app.put('/advertise/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const property = req.body;
+            const options = {upsert : true };
+            const updatedProperties = {
+                $set: {
+                    isAdvertised: property.isAdvertised,
+                }
+            }
+            const result = await propertiesCollection.updateOne(query, updatedProperties, options);
             res.send(result);
         })
 
