@@ -38,6 +38,7 @@ async function run() {
         const advertiserCollection = client.db("nextHomeDB").collection("advertise");
         const wishlistCollection = client.db("nextHomeDB").collection("wishList");
         const reviewerCollection = client.db("nextHomeDB").collection("reviews");
+        const offersCollection = client.db("nextHomeDB").collection("offers");
 
 
         // users related api
@@ -193,6 +194,26 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/userWishList/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { buyerEmail: email };
+            const wishlist = await wishlistCollection.find(query).toArray();
+            res.send(wishlist);
+        })
+
+        app.get('/wishList/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const wishlist = await wishlistCollection.findOne(query);
+            res.send(wishlist);
+        })
+
+        app.delete('/wishList/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await wishlistCollection.deleteOne(query);
+            res.send(result);
+        })
 
         // Review 
         app.post('/reviews', async (req, res) => {
@@ -213,11 +234,32 @@ async function run() {
             res.send(reviews);
         })
 
+        app.get('/myReviews/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { reviewerEmail: email };
+            const reviews = await reviewerCollection.find(query).toArray();
+            res.send(reviews);
+        })
+
         app.delete('/deleteReviews/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await reviewerCollection.deleteOne(query);
             res.send(result);
+        })
+
+        // offers
+        app.post('/offers', async (req, res) => {
+            const offer = req.body;
+            const result = await offersCollection.insertOne(offer);
+            res.send(result);
+        })
+
+        app.get('/offerList/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { buyerEmail: email };
+            const offers = await offersCollection.find(query).toArray();
+            res.send(offers);
         })
 
         await client.db("admin").command({ ping: 1 });
