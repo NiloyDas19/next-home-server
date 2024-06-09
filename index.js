@@ -262,6 +262,53 @@ async function run() {
             res.send(offers);
         })
 
+        app.get('/agentOfferList/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { agentEmail: email };
+            const offers = await offersCollection.find(query).toArray();
+            res.send(offers);
+        })
+
+        app.put('/rejectOffer/:propertyId', async (req, res) => {
+            const propertyId = req.params.propertyId;
+            const query = { propertyId: propertyId };
+            const offer = req.body;
+            const updatedOffers = {
+                $set: {
+                    status: offer.status,
+                }
+            }
+            const result = await offersCollection.updateMany(query, updatedOffers);
+            res.send(result);
+        })
+
+        app.put('/acceptOffer/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const offer = req.body;
+            const updatedOffers = {
+                $set: {
+                    status: offer.status,
+                }
+            }
+            const result = await offersCollection.updateOne(query, updatedOffers);
+            res.send(result);
+        })
+
+        app.put('/rejectOneOffer/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const offer = req.body;
+            const updatedOffers = {
+                $set: {
+                    status: offer.status,
+                }
+            }
+            const result = await offersCollection.updateOne(query, updatedOffers);
+            res.send(result);
+        })
+
+
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
