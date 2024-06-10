@@ -5,7 +5,7 @@ dotenv.config()
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000
 const app = express()
-
+let jwt = require('jsonwebtoken');
 // console.log(process.env.STRIPE_SECRET_KEY)
 
 
@@ -42,30 +42,55 @@ async function run() {
         const offersCollection = client.db("nextHomeDB").collection("offers");
         const paymentCollection = client.db("nextHomeDB").collection("payment");
 
+        //jwt related api
+        app.post('/jwt', async (req, res) => {
+            let user = req.body;
+            let token = jwt.sign(user, process.env.TOKEN_SECRET, { expiresIn: '1h' });
+            res.send({ token })
+        })
 
         // middlewares verify token
         const verifyToken = (req, res, next) => {
-            console.log('inside verify token', req.headers.authorization);
-            if (!req.headers.authorization) {
-                return res.status(401).send({ message: 'unauthorized access' });
+            const token = req.headers.authorization;
+            console.log("inside verify->", token);
+            if (!token) {
+                return res.status(401).send({ message: "forbidden access" });
             }
-            const token = req.headers.authorization.split(' ')[1];
-            jwt.verify(token, process.env.ACCESS_TOKEN_PASS, (err, decoded) => {
-                if (err) {
-                    return res.status(401).send({ message: 'unauthorized access' })
+            jwt.verify(token, process.env.TOKEN_SECRET, (error, decoded) => {
+                if (error) {
+                    console.log(error)
+                    return res.status(401).send({ message: "forbidden access" });
                 }
+
                 req.decoded = decoded;
                 next();
             })
         }
 
+        const verifyAgent = async (req, res, next) => {
+            const email = req.decoded.email;
+            const query = { email: email };
+            const user = await userCollection.findOne(query);
+            const isAdmin = user?.role === "agent" || user?.role === "fraud";
+            if (!isAdmin) {
+                return res.status(403).send({ message: "forbidden access" });
+            }
+            next();
+        }
 
-        //jwt related api
-        app.post('/jwt', async (req, res) => {
-            let user = req.body;
-            let token = jwt.sign(user, process.env.ACCESS_TOKEN_PASS, { expiresIn: '1h' });
-            res.send({ token })
-        })
+
+        // middleware verify Admin
+        const verifyAdmin = async (req, res, next) =>{
+            const email = req.decoded.email;
+            const query = {email: email};
+            const user = await userCollection.findOne(query);
+            const isAdmin = user?.role === "admin";
+            if (!isAdmin){
+              return res.status(403).send({message: "forbidden access"});
+            }
+            next();
+          }
+      
 
 
         // users related api
@@ -131,22 +156,34 @@ async function run() {
         })
 
         app.get('/verifiedProperties', async (req, res) => {
+            // const properties = await propertiesCollection.find({ verificationStatus: 'verified' }).toArray();
+            // // console.log(properties);
+            // const result = [];
+            // for (let i = 0; i < properties.length; i++) {
+            //     const query = { email: properties[i].agentEmail };
+            //     const user = await userCollection.findOne(query);
+            //     // console.log(user);
+            //     if (user && user?.role === 'agent') {
+            //         result.push(properties[i]);
+            //     }
+            // }
+            // // console.log(result);    
+            // res.send(result);
+            const agents = await userCollection.find({ role: 'agent' }).toArray();
+            const agentEmails = agents.map(agent => agent.email);
+    
+            // Fetch all verified properties
             const properties = await propertiesCollection.find({ verificationStatus: 'verified' }).toArray();
-            // console.log(properties);
-            const result = [];
-            for (let i = 0; i < properties.length; i++) {
-                const query = { email: properties[i].agentEmail };
-                const user = await userCollection.findOne(query);
-                // console.log(user);
-                if (user && user?.role === 'agent') {
-                    result.push(properties[i]);
-                }
-            }
-            // console.log(result);    
-            res.send(result);
+    
+            // Filter properties to include only those whose agent is in the agentEmails list
+            const verifiedProperties = properties.filter(property => agentEmails.includes(property.agentEmail));
+    
+            res.send(verifiedProperties);
         })
 
-        app.get('/advertisedProperties', async (req, res) => {
+        app.get('/advertisedProperties', verifyToken, async (req, res) => {
+            // const token = req.headers.authorization;
+            // console.log("inside advertisement", token);
             const properties = await propertiesCollection.find({ verificationStatus: 'verified' }).toArray();
             // console.log(properties);
             const result = [];
@@ -186,7 +223,7 @@ async function run() {
             res.send(result);
         })
 
-        app.put('/verifiedProperties/:id', async (req, res) => {
+        app.put('/verifiedProperties/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const property = req.body;
