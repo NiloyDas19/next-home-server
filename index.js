@@ -117,12 +117,19 @@ async function run() {
             res.send(result);
         });
 
-        app.put('/userRole/:id', async (req, res) => {
+        app.put('/userRole/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const user = req.body;
             const updatedUser = { $set: { role: user.role } };
             const result = await userCollection.updateOne(query, updatedUser);
+            res.send(result);
+        })
+
+        app.delete('/deleteUser/:id', verifyToken, verifyAdmin, async (req, res) =>{
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await userCollection.deleteOne(query);
             res.send(result);
         })
 
@@ -236,7 +243,7 @@ async function run() {
             res.send(result);
         })
 
-        app.put('/advertise/:id', async (req, res) => {
+        app.put('/advertise/:id', verifyToken, verifyAdmin, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const property = req.body;
@@ -305,7 +312,7 @@ async function run() {
             res.send(reviews);
         })
 
-        app.delete('/deleteReviews/:id', async (req, res) => {
+        app.delete('/deleteReviews/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await reviewerCollection.deleteOne(query);
