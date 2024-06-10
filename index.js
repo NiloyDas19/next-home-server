@@ -259,27 +259,27 @@ async function run() {
 
 
         // Wishlist
-        app.post('/wishlist', async (req, res) => {
+        app.post('/wishlist', verifyToken, async (req, res) => {
             const wishlist = req.body;
             const result = await wishlistCollection.insertOne(wishlist);
             res.send(result);
         })
 
-        app.get('/userWishList/:email', async (req, res) => {
+        app.get('/userWishList/:email', verifyToken, async (req, res) => {
             const email = req.params.email;
             const query = { buyerEmail: email };
             const wishlist = await wishlistCollection.find(query).toArray();
             res.send(wishlist);
         })
 
-        app.get('/wishList/:id', async (req, res) => {
+        app.get('/wishList/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const wishlist = await wishlistCollection.findOne(query);
             res.send(wishlist);
         })
 
-        app.delete('/wishList/:id', async (req, res) => {
+        app.delete('/wishList/:id', verifyToken, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await wishlistCollection.deleteOne(query);
@@ -287,7 +287,7 @@ async function run() {
         })
 
         // Review 
-        app.post('/reviews', async (req, res) => {
+        app.post('/reviews', verifyToken, async (req, res) => {
             const review = req.body;
             const result = await reviewerCollection.insertOne(review);
             res.send(result);
