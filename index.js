@@ -134,7 +134,7 @@ async function run() {
         })
 
         // Properties related api
-        app.post('/properties', async (req, res) => {
+        app.post('/properties',verifyToken, verifyAgent, async (req, res) => {
             const property = req.body;
             const result = await propertiesCollection.insertOne(property);
             res.send(result);
@@ -206,14 +206,14 @@ async function run() {
             res.send(result);
         })
 
-        app.delete('/properties/:id', async (req, res) => {
+        app.delete('/properties/:id', verifyToken,async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const result = await propertiesCollection.deleteOne(query);
             res.send(result);
         })
 
-        app.put('/properties/:id', async (req, res) => {
+        app.put('/properties/:id',verifyToken, verifyAgent, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const property = req.body;
@@ -350,7 +350,7 @@ async function run() {
         })
 
 
-        app.put('/rejectOffer/:propertyId', async (req, res) => {
+        app.put('/rejectOffer/:propertyId', verifyToken, verifyAgent,async (req, res) => {
             const propertyId = req.params.propertyId;
             const query = {
                 propertyId: propertyId,
@@ -366,7 +366,7 @@ async function run() {
             res.send(result);
         })
 
-        app.put('/acceptOffer/:id', async (req, res) => {
+        app.put('/acceptOffer/:id',verifyToken, verifyAgent, async (req, res) => {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const offer = req.body;
