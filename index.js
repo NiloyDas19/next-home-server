@@ -188,21 +188,34 @@ async function run() {
             res.send(verifiedProperties);
         })
 
-        app.get('/advertisedProperties', verifyToken, async (req, res) => {
+        app.get('/advertisedProperties',  async (req, res) => {
             // const token = req.headers.authorization;
             // console.log("inside advertisement", token);
-            const properties = await propertiesCollection.find({ verificationStatus: 'verified' }).toArray();
-            // console.log(properties);
-            const result = [];
-            for (let i = 0; i < properties.length; i++) {
-                const query = { email: properties[i].agentEmail };
-                const user = await userCollection.findOne(query);
-                // console.log(user);
-                if (user && user?.role === 'agent' && properties[i]?.isAdvertised === true) {
-                    result.push(properties[i]);
-                }
-            }
-            // console.log(result);    
+            // const properties = await propertiesCollection.find({ verificationStatus: 'verified' }).toArray();
+            // // console.log(properties);
+            // const result = [];
+            // for (let i = 0; i < properties.length; i++) {
+            //     const query = { email: properties[i].agentEmail };
+            //     const user = await userCollection.findOne(query);
+            //     // console.log(user);
+            //     if (user && user?.role === 'agent' && properties[i]?.isAdvertised === true) {
+            //         result.push(properties[i]);
+            //     }
+            // }
+            // // console.log(result);    
+            // res.send(result);
+            const properties = await propertiesCollection.find({ 
+                verificationStatus: 'verified', 
+                isAdvertised: true 
+            }).toArray();
+    
+            // Fetch all agents
+            const agents = await userCollection.find({ role: 'agent' }).toArray();
+            const agentEmails = new Set(agents.map(agent => agent.email));
+    
+            // Filter properties to include only those listed by agents
+            const result = properties.filter(property => agentEmails.has(property.agentEmail));
+    
             res.send(result);
         })
 
