@@ -2,11 +2,12 @@ const express = require('express')
 const cors = require('cors')
 const dotenv = require('dotenv')
 dotenv.config()
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY)
 const port = process.env.PORT || 5000
 const app = express()
 
+// console.log(process.env.STRIPE_SECRET_KEY)
 
-// middleware
 
 app.use(cors());
 app.use(express.json());
@@ -39,6 +40,7 @@ async function run() {
         const wishlistCollection = client.db("nextHomeDB").collection("wishList");
         const reviewerCollection = client.db("nextHomeDB").collection("reviews");
         const offersCollection = client.db("nextHomeDB").collection("offers");
+        const paymentCollection = client.db("nextHomeDB").collection("payment");
 
 
         // users related api
@@ -119,7 +121,7 @@ async function run() {
             res.send(result);
         })
 
-        app.get('/advertisedProperties', async(req, res) => {
+        app.get('/advertisedProperties', async (req, res) => {
             const properties = await propertiesCollection.find({ verificationStatus: 'verified' }).toArray();
             // console.log(properties);
             const result = [];
@@ -176,7 +178,7 @@ async function run() {
             const id = req.params.id;
             const query = { _id: new ObjectId(id) };
             const property = req.body;
-            const options = {upsert : true };
+            const options = { upsert: true };
             const updatedProperties = {
                 $set: {
                     isAdvertised: property.isAdvertised,
@@ -255,6 +257,15 @@ async function run() {
             res.send(result);
         })
 
+        app.get('/acceptOffer/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const result = await offersCollection.findOne(query);
+            res.send(result);
+        })
+
+
+
         app.get('/offerList/:email', async (req, res) => {
             const email = req.params.email;
             const query = { buyerEmail: email };
@@ -269,9 +280,13 @@ async function run() {
             res.send(offers);
         })
 
+
         app.put('/rejectOffer/:propertyId', async (req, res) => {
             const propertyId = req.params.propertyId;
-            const query = { propertyId: propertyId };
+            const query = {
+                propertyId: propertyId,
+                status: 'pending'
+            };
             const offer = req.body;
             const updatedOffers = {
                 $set: {
@@ -309,6 +324,50 @@ async function run() {
         })
 
 
+        app.put('/addTransactionId/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: new ObjectId(id) };
+            const offer = req.body;
+            const updatedOffers = {
+                $set: {
+                    transactionId: offer.transactionId,
+                    status: offer.status,
+                }
+            }
+            const options = {
+                upsert: true
+            };
+
+            const result = await offersCollection.updateOne(query, updatedOffers, options);
+            res.send(result);
+        })
+
+        // Payment
+        app.post("/create_payment_intent", async (req, res) => {
+            const { price } = req.body;
+            // console.log(price);
+            const amount = parseInt(price * 100);
+            // console.log("what is the amount");
+
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"]
+            });
+
+            res.send({
+                clientSecret: paymentIntent.client_secret,
+            });
+        });
+
+        app.post('/payment', async (req, res) => {
+            const payment = req.body;
+            const result = await paymentCollection.insertOne(payment);
+            res.send(result);
+        })
+
+
+
         await client.db("admin").command({ ping: 1 });
         console.log("Pinged your deployment. You successfully connected to MongoDB!");
     } finally {
@@ -319,8 +378,9 @@ async function run() {
 run().catch(console.dir);
 
 app.get('/', (req, res) => {
-    res.send('NextHome is running...........')
+    res.send('NextHome is running...........');
 })
+
 
 app.listen(port, () => {
     console.log(`NextHome is running on port ${port}`);
