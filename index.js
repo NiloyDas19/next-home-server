@@ -43,6 +43,31 @@ async function run() {
         const paymentCollection = client.db("nextHomeDB").collection("payment");
 
 
+        // middlewares verify token
+        const verifyToken = (req, res, next) => {
+            console.log('inside verify token', req.headers.authorization);
+            if (!req.headers.authorization) {
+                return res.status(401).send({ message: 'unauthorized access' });
+            }
+            const token = req.headers.authorization.split(' ')[1];
+            jwt.verify(token, process.env.ACCESS_TOKEN_PASS, (err, decoded) => {
+                if (err) {
+                    return res.status(401).send({ message: 'unauthorized access' })
+                }
+                req.decoded = decoded;
+                next();
+            })
+        }
+
+
+        //jwt related api
+        app.post('/jwt', async (req, res) => {
+            let user = req.body;
+            let token = jwt.sign(user, process.env.ACCESS_TOKEN_PASS, { expiresIn: '1h' });
+            res.send({ token })
+        })
+
+
         // users related api
         app.get('/users', async (req, res) => {
             const result = await userCollection.find().toArray();
@@ -364,6 +389,13 @@ async function run() {
             const payment = req.body;
             const result = await paymentCollection.insertOne(payment);
             res.send(result);
+        })
+
+        app.get('/soldProperties/:email', async (req, res) => {
+            const email = req.params.email;
+            const query = { agentEmail: email };
+            const soldProperties = await paymentCollection.find(query).toArray();
+            res.send(soldProperties);
         })
 
 
